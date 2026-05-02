@@ -1,0 +1,16 @@
+{
+  "name": "trustid-backend",
+  "version": "1.0.0",
+  "description": "TrustID AI backend for UBID and Active Business Intelligence prototype",
+  "main": "src/server.js",
+  "scripts": {
+    "dev": "node src/server.js",
+    "start": "node src/server.js",
+    "seed": "node -e \"console.log('TrustID sandbox data loads automatically when server starts.')\""
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "crypto-js": "^4.2.0",
+    "express": "^4.21.2"
+  }
+}
