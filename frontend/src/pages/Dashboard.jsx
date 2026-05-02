@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { apiGet } from "../api";
+import { apiGet, apiPost } from "../api";
 import StatCard from "../components/StatCard";
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 
@@ -8,13 +8,42 @@ const COLORS = ["#3e7d60", "#f7f7d5", "#c7e1d5", "#eef8fe", "#1c2d5c", "#4f7c82"
 export default function Dashboard() {
   const [data, setData] = useState(null);
   const [impact, setImpact] = useState(null);
+  const [message, setMessage] = useState("");
+
+  async function load() {
+    const dashboardData = await apiGet("/dashboard");
+    const impactData = await apiGet("/impact");
+
+    setData(dashboardData);
+    setImpact(impactData);
+  }
 
   useEffect(() => {
-    apiGet("/dashboard").then(setData);
-    apiGet("/impact").then(setImpact);
+    load();
   }, []);
 
+  async function resetSandbox() {
+    const confirmReset = window.confirm(
+      "Reset sandbox data? This will restore review cases, audit ledger, field tasks, and demo state."
+    );
+
+    if (!confirmReset) return;
+
+    await apiPost("/admin/reset");
+    await load();
+
+    setMessage("Sandbox reset successfully. Demo data has been restored.");
+  }
+
   if (!data) return <div className="loading">Loading command center...</div>;
+
+  const compressionRatio = data.totalUbids
+    ? (data.totalRecords / data.totalUbids).toFixed(2)
+    : "0";
+
+  const fragmentationReduced = data.totalRecords
+    ? Math.round(((data.totalRecords - data.totalUbids) / data.totalRecords) * 100)
+    : 0;
 
   return (
     <section className="page">
@@ -29,8 +58,15 @@ export default function Dashboard() {
           </p>
         </div>
 
-        <div className="status-pill">Live Sandbox Prototype</div>
+        <div className="header-actions">
+          <div className="status-pill">Live Sandbox Prototype</div>
+          <button className="btn ghost" onClick={resetSandbox}>
+            Reset Sandbox Data
+          </button>
+        </div>
       </div>
+
+      {message && <div className="success-banner">{message}</div>}
 
       <div className="stat-grid">
         <StatCard
@@ -47,7 +83,7 @@ export default function Dashboard() {
         <StatCard
           label="Pending Reviews"
           value={data.pendingReviews}
-          helper="Officer review queue"
+          helper="Admin review queue"
           tone="yellow"
         />
         <StatCard
@@ -56,6 +92,18 @@ export default function Dashboard() {
           helper="Shell/entity risk signals"
           tone="red"
         />
+      </div>
+
+      <div className="hero-panel compression-panel">
+        <div>
+          <p className="eyebrow">Identity Compression</p>
+          <h2>{data.totalRecords} department records → {data.totalUbids} UBIDs</h2>
+          <p>
+            TrustID reduced fragmented department identities into canonical business identities.
+            Current compression ratio is <strong>{compressionRatio}:1</strong>, with approximately{" "}
+            <strong>{fragmentationReduced}%</strong> identity fragmentation reduced in the sandbox.
+          </p>
+        </div>
       </div>
 
       <div className="two-col">
@@ -146,7 +194,7 @@ export default function Dashboard() {
         <h2>Why TrustID is different</h2>
         <p>
           Most UBID systems stop at record matching. TrustID goes further: it tells officers
-          whether the identity is trustworthy, whether the business is active, whether a field
+          whether the identity is trustworthy, whether the business is active, whether field
           verification is needed, and whether every decision can be defended in audit through
           a tamper-evident decision ledger.
         </p>

@@ -3,7 +3,7 @@ const cors = require("cors");
 const CryptoJS = require("crypto-js");
 
 const app = express();
-const PORT = 5000;
+const PORT = process.env.PORT || 5000;
 
 app.use(cors());
 app.use(express.json());
@@ -17,6 +17,7 @@ function blindHash(value) {
 
 function normalizeText(value) {
   if (!value) return "";
+
   return value
     .toLowerCase()
     .replace(
@@ -451,6 +452,16 @@ const activityEvents = [
     event_date: "2023-01-20",
     signal_strength: 1,
     description: "Low power usage before possible closure"
+  },
+  {
+    id: 10,
+    source_system: "Fire Department",
+    source_record_id: "FIRE-UNKNOWN-7761",
+    event_type: "Fire Safety Inspection",
+    event_date: "2026-03-18",
+    signal_strength: 3,
+    description:
+      "Fire safety inspection event received, but source record could not be confidently joined to an existing UBID"
   }
 ];
 
@@ -495,6 +506,7 @@ function generateUbid(index) {
 
 function monthsBetween(dateString, currentDate = new Date("2026-05-01")) {
   const d = new Date(dateString);
+
   return (
     (currentDate.getFullYear() - d.getFullYear()) * 12 +
     (currentDate.getMonth() - d.getMonth())
@@ -977,9 +989,7 @@ function verifyLedger() {
     valid: true,
     entries: auditLedger.length,
     rootHash:
-      auditLedger.length > 0
-        ? auditLedger[auditLedger.length - 1].current_hash
-        : "GENESIS"
+      auditLedger.length > 0 ? auditLedger[auditLedger.length - 1].current_hash : "GENESIS"
   };
 }
 
@@ -996,7 +1006,180 @@ function bootTrustIdSandbox() {
   calculateTrustScores();
 }
 
-bootTrustIdSandbox();
+function resetSandboxData() {
+  ubids = [];
+  ubidLinks = [];
+  reviewQueue = [];
+  integrityFlags = [];
+  auditLedger = [];
+  fieldVerificationTasks = [];
+
+  for (const event of activityEvents) {
+    delete event.joined_ubid;
+    delete event.join_confidence;
+  }
+
+  bootTrustIdSandbox();
+}
+
+resetSandboxData();
+
+app.post("/api/admin/reset", (req, res) => {
+  resetSandboxData();
+
+  res.json({
+    success: true,
+    message: "TrustID sandbox data has been reset.",
+    totals: {
+      records: departmentRecords.length,
+      ubids: ubids.length,
+      reviews: reviewQueue.length,
+      flags: integrityFlags.length,
+      ledgerEntries: auditLedger.length
+    }
+  });
+});
+
+app.get("/api/lookup", (req, res) => {
+  const { q, name, address, pin } = req.query;
+
+  const hasUniversalQuery = q && q.trim();
+  const hasCompositeQuery = name || address || pin;
+
+  if (!hasUniversalQuery && !hasCompositeQuery) {
+    return res.status(400).json({
+      message:
+        "Provide q for universal lookup, or use name/address/pin for composite lookup."
+    });
+  }
+
+  let matchedRecord = null;
+  let matchType = null;
+  let confidence = 0;
+
+  if (hasUniversalQuery) {
+    const query = q.trim();
+    const queryLower = query.toLowerCase();
+    const inputHash = blindHash(query.toUpperCase());
+
+    const byRecordId = departmentRecords.find(
+      (record) => record.source_record_id.toLowerCase() === queryLower
+    );
+
+    const byIdentifier = departmentRecords.find(
+      (record) => record.pan_hash === inputHash || record.gstin_hash === inputHash
+    );
+
+    const byName = departmentRecords.find((record) =>
+      record.business_name.toLowerCase().includes(queryLower)
+    );
+
+    matchedRecord = byRecordId || byIdentifier || byName;
+
+    matchType = byRecordId
+      ? "Department Record ID"
+      : byIdentifier
+      ? "PAN / GSTIN blind-hash"
+      : byName
+      ? "Business Name"
+      : null;
+
+    confidence = byRecordId || byIdentifier ? 1 : byName ? 0.72 : 0;
+  }
+
+  if (!matchedRecord && hasCompositeQuery) {
+    const candidates = departmentRecords
+      .filter((record) => {
+        if (pin && record.pin_code !== pin.trim()) return false;
+        return true;
+      })
+      .map((record) => {
+        const nameScore = name
+          ? jaroWinkler(normalizeText(name), normalizeText(record.business_name))
+          : 0;
+
+        const addressScore = address ? tokenSimilarity(address, record.address) : 0;
+        const pinScore = pin && record.pin_code === pin.trim() ? 1 : 0;
+
+        const score = nameScore * 0.55 + addressScore * 0.35 + pinScore * 0.1;
+
+        return {
+          record,
+          score,
+          nameScore,
+          addressScore,
+          pinScore
+        };
+      })
+      .sort((a, b) => b.score - a.score);
+
+    const best = candidates[0];
+
+    if (best && best.score >= 0.45) {
+      matchedRecord = best.record;
+      matchType = "Name + Address + PIN composite lookup";
+      confidence = Number(best.score.toFixed(3));
+    }
+  }
+
+  if (!matchedRecord) {
+    return res.json({
+      found: false,
+      query: q || { name, address, pin },
+      message: "No matching department record or UBID found."
+    });
+  }
+
+  const link = ubidLinks.find((item) => item.record_id === matchedRecord.id);
+
+  if (!link) {
+    return res.json({
+      found: false,
+      matchedRecord,
+      message: "A department record matched, but it is not linked to a UBID yet."
+    });
+  }
+
+  const business = ubids.find((item) => item.ubid === link.ubid);
+
+  const linkedRecords = ubidLinks
+    .filter((item) => item.ubid === link.ubid)
+    .map((item) => ({
+      ...departmentRecords.find((record) => record.id === item.record_id),
+      confidence: item.confidence,
+      explanation: item.explanation
+    }));
+
+  const events = activityEvents.filter((event) => event.joined_ubid === link.ubid);
+
+  const flags = integrityFlags.filter(
+    (flag) => flag.ubid === link.ubid || flag.ubid === null
+  );
+
+  res.json({
+    found: true,
+    ubid: link.ubid,
+    matchType,
+    confidence,
+    matchedRecord,
+    business,
+    linkedRecords,
+    events,
+    flags,
+    officerBrief: buildOfficerBrief(link.ubid)
+  });
+});
+
+app.get("/api/activity/unmatched", (req, res) => {
+  const unmatched = activityEvents.filter(
+    (event) => !event.joined_ubid || event.join_confidence < 0.5
+  );
+
+  res.json({
+    total: unmatched.length,
+    items: unmatched
+  });
+});
 
 app.get("/api/health", (req, res) => {
   res.json({

@@ -15,6 +15,8 @@ export default function Audit() {
     return acc;
   }, {});
 
+  const chainPreview = [...data.ledger].slice(0, 6);
+
   return (
     <section className="page">
       <div className="page-header">
@@ -38,14 +40,17 @@ export default function Audit() {
           <span>Total Ledger Entries</span>
           <strong>{data.verification.entries}</strong>
         </div>
+
         <div className="mini-metric">
           <span>Current Integrity State</span>
           <strong>{data.verification.valid ? "Valid" : "Broken"}</strong>
         </div>
+
         <div className="mini-metric">
           <span>Review Events</span>
           <strong>{eventCounts.REVIEW_CREATED || 0}</strong>
         </div>
+
         <div className="mini-metric">
           <span>Trust Score Events</span>
           <strong>{eventCounts.TRUST_SCORE_COMPUTED || 0}</strong>
@@ -57,8 +62,40 @@ export default function Audit() {
         <p className="hash-text">{data.verification.rootHash}</p>
         <p>
           If any historical decision is modified, the chain root changes and the ledger fails
-          verification. This is how TrustID makes identity decisions defensible in audit.
+          verification. This makes identity decisions audit-defensible.
         </p>
+      </div>
+
+      <div className="panel">
+        <div className="panel-header">
+          <h2>Merkle-Style Chain Visualization</h2>
+          <p>
+            Each block carries the previous hash into the next event. This makes tampering
+            visible.
+          </p>
+        </div>
+
+        <div className="chain-visual">
+          {chainPreview.map((entry, index) => (
+            <div className="chain-item" key={entry.id}>
+              <div className="chain-block">
+                <span>{entry.event_type}</span>
+                <strong>Block #{entry.id}</strong>
+                <small>{entry.current_hash.slice(0, 18)}...</small>
+              </div>
+
+              {index < chainPreview.length - 1 && (
+                <div className="chain-arrow">
+                  →
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+
+        <div className="chain-note">
+          Showing latest {chainPreview.length} ledger blocks. Full ledger below.
+        </div>
       </div>
 
       <div className="panel">

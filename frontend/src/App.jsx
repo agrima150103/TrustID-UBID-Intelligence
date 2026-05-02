@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Sidebar from "./components/Sidebar";
 import Dashboard from "./pages/Dashboard";
 import Ingestion from "./pages/Ingestion";
@@ -24,7 +24,20 @@ const pages = {
 
 export default function App() {
   const [activePage, setActivePage] = useState("dashboard");
+  const [theme, setTheme] = useState(() => {
+    return localStorage.getItem("trustid-theme") || "light";
+  });
+
   const Page = pages[activePage];
+
+  useEffect(() => {
+    document.body.setAttribute("data-theme", theme);
+    localStorage.setItem("trustid-theme", theme);
+  }, [theme]);
+
+  function toggleTheme() {
+    setTheme((current) => (current === "light" ? "dark" : "light"));
+  }
 
   return (
     <div className="app-shell">
@@ -37,6 +50,10 @@ export default function App() {
           <span>Privacy Mode: Blind Hashing Enabled</span>
           <span>Ledger: Verified</span>
           <span>Role: Admin Officer</span>
+
+          <button className="theme-toggle" onClick={toggleTheme}>
+            {theme === "light" ? "🌙 Dark Mode" : "☀️ Light Mode"}
+          </button>
         </div>
 
         <Page />
