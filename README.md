@@ -191,9 +191,4 @@ A factory with no KSPCB inspection record is not necessarily dormant — it may 
 | Every decision reversible | Hash-chained ledger; reviewer decisions can be reopened and overridden |
 | Wrong merge more costly than missed one | Conservative thresholds; ambiguous pairs always go to human review |
 
-### Prototype Backend Note
 
-The current submitted prototype uses `backend/src/server.js` as a Windows-safe in-memory Express backend.
-
-Older route files, if present, belong to an earlier SQLite-backed implementation idea and are not required for the final prototype demo. The in-memory backend is the active backend for this submission because it avoids native SQLite installation issues and is easier to run locally and deploy.
-bootTrustIdSandbox();
