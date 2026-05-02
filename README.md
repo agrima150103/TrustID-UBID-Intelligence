@@ -60,52 +60,44 @@ There is no reliable join key. Karnataka Commerce & Industries cannot answer: *h
 ---
 
 ## Project Structure
+
+```text
 TrustID-UBID-Intelligence/
 ├── backend/
-│   ├── data/
-│   │   └── seedData.js          # Synthetic Karnataka business records + events
 │   ├── src/
-│   │   ├── engines/
-│   │   │   ├── activityEngine.js    # Active/Dormant/Closed classification
-│   │   │   ├── auditLedger.js       # Hash-chained tamper-evident ledger
-│   │   │   ├── integrityEngine.js   # Shell entity + fragmentation detection
-│   │   │   └── matcher.js           # Jaro-Winkler + confidence scoring
-│   │   ├── routes/
-│   │   │   ├── activityRoutes.js
-│   │   │   ├── auditRoutes.js
-│   │   │   ├── dashboardRoutes.js
-│   │   │   ├── ingestionRoutes.js
-│   │   │   ├── queryRoutes.js
-│   │   │   ├── reviewerRoutes.js
-│   │   │   └── ubidRoutes.js
-│   │   ├── db.js                # SQLite schema + connection
-│   │   ├── seed.js              # Database seeding script
-│   │   └── server.js            # Express app (in-memory prototype)
-│   ├── trustid.db
+│   │   └── server.js
 │   └── package.json
-└── frontend/
-├── src/
-│   ├── components/
-│   │   ├── ConfidenceBar.jsx
-│   │   ├── EvidenceBadge.jsx
-│   │   ├── Sidebar.jsx
-│   │   └── StatCard.jsx
-│   ├── pages/
-│   │   ├── Activity.jsx         # Activity intelligence + reclassify
-│   │   ├── Audit.jsx            # Tamper-evident ledger view
-│   │   ├── Dashboard.jsx        # Command center with KPIs
-│   │   ├── Impact.jsx           # Before/after + PIN intelligence
-│   │   ├── Ingestion.jsx        # Department feeds view
-│   │   ├── Query.jsx            # Flagship query + integrity flags
-│   │   ├── Registry.jsx         # UBID registry + evidence trail
-│   │   ├── Resolution.jsx       # Pipeline explanation
-│   │   └── Reviewer.jsx         # Admin review console
-│   ├── api.js
-│   ├── App.jsx
-│   ├── main.jsx
-│   └── styles.css
-├── index.html
-└── package.json
+│
+├── frontend/
+│   ├── index.html
+│   ├── package.json
+│   ├── vite.config.js
+│   └── src/
+│       ├── api.js
+│       ├── App.jsx
+│       ├── main.jsx
+│       ├── styles.css
+│       │
+│       ├── components/
+│       │   ├── Sidebar.jsx
+│       │   ├── StatCard.jsx
+│       │   ├── ConfidenceBar.jsx
+│       │   └── EvidenceBadge.jsx
+│       │
+│       └── pages/
+│           ├── Dashboard.jsx
+│           ├── Ingestion.jsx
+│           ├── Resolution.jsx
+│           ├── Registry.jsx
+│           ├── Reviewer.jsx
+│           ├── Activity.jsx
+│           ├── Query.jsx
+│           ├── Audit.jsx
+│           └── Impact.jsx
+│
+├── README.md
+└── .gitignore
+```
 
 ## Running Locally
 
