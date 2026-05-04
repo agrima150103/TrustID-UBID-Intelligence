@@ -1180,7 +1180,74 @@ app.get("/api/activity/unmatched", (req, res) => {
     items: unmatched
   });
 });
+app.get("/api/lookup", (req, res) => {
+  const { q } = req.query;
+  if (!q) return res.status(400).json({ message: "Provide query parameter q" });
 
+  const query = q.trim();
+  const queryLower = query.toLowerCase();
+
+  // Search by source record ID (exact)
+  const byRecordId = departmentRecords.find(
+    (r) => r.source_record_id.toLowerCase() === queryLower
+  );
+
+  // Search by business name (partial)
+  const byName = departmentRecords.find((r) =>
+    r.business_name.toLowerCase().includes(queryLower)
+  );
+
+  // Search by blind-hashed PAN or GSTIN
+  const inputHash = blindHash(query.toUpperCase());
+  const byIdentifier = departmentRecords.find(
+    (r) => r.pan_hash === inputHash || r.gstin_hash === inputHash
+  );
+
+  const matchedRecord = byRecordId || byIdentifier || byName;
+  const matchType = byRecordId
+    ? "Department Record ID"
+    : byIdentifier
+    ? "PAN / GSTIN (blind-hashed)"
+    : byName
+    ? "Business Name (partial match)"
+    : null;
+
+  if (!matchedRecord) {
+    return res.json({ found: false, query });
+  }
+
+  const link = ubidLinks.find((l) => l.record_id === matchedRecord.id);
+  if (!link) return res.json({ found: false, query });
+
+  const business = ubids.find((u) => u.ubid === link.ubid);
+  const linkedRecords = ubidLinks
+    .filter((l) => l.ubid === link.ubid)
+    .map((l) => ({
+      ...departmentRecords.find((r) => r.id === l.record_id),
+      confidence: l.confidence,
+      explanation: l.explanation
+    }));
+
+  const events = activityEvents.filter((e) => e.joined_ubid === link.ubid);
+
+  res.json({
+    found: true,
+    ubid: link.ubid,
+    matchType,
+    query,
+    business,
+    linkedRecords,
+    events
+  });
+});
+
+app.get("/api/activity/unmatched", (req, res) => {
+  const unmatched = activityEvents.filter(
+    (e) => !e.joined_ubid || e.join_confidence < 0.5
+  );
+
+  res.json({ items: unmatched, total: unmatched.length });
+});
 app.get("/api/health", (req, res) => {
   res.json({
     status: "ok",
