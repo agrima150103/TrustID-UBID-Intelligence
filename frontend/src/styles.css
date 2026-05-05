@@ -257,30 +257,6 @@ button {
 .stat-card {
   padding: 22px;
   position: relative;
-  overflow: hidden;
-}
-
-.stat-card::after {
-  content: "";
-  position: absolute;
-  right: -22px;
-  top: -22px;
-  width: 100px;
-  height: 100px;
-  border-radius: 50%;
-  background: rgba(184, 227, 233, 0.72);
-}
-
-.stat-card.tone-green::after {
-  background: rgba(199, 225, 213, 0.9);
-}
-
-.stat-card.tone-yellow::after {
-  background: rgba(247, 247, 213, 0.95);
-}
-
-.stat-card.tone-red::after {
-  background: rgba(255, 218, 213, 0.9);
 }
 
 .stat-card p {
