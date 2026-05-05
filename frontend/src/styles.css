@@ -1640,3 +1640,13 @@ body[data-theme="dark"] .status-chip.unknown {
   font-size: 12px;
   font-weight: 700;
 }
+.chain-item {
+  flex-shrink: 0;
+}
+.chain-block small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 160px;
+}
