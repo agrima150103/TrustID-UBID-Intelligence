@@ -475,15 +475,7 @@ PIN-level governance intelligence available
 
 ---
 
-### 17. Dark Mode
-
-TrustID includes a light/dark mode toggle for officer usability.
-
-The selected theme is stored in local storage and persists across sessions.
-
----
-
-## Architecture Overview
+### 17. Architecture Overview
 
 ```text
 Legacy Department Systems
@@ -666,8 +658,7 @@ http://localhost:5173
 ```text
 /api/lookup?q=SE-560058-1001
 /api/lookup?q=AABCL1234F
-/api/lookup?q=Lakshmi Precision
-/api/lookup?name=Lakshmi Precision&address=Plot 14 Peenya&pin=560058
+/api/lookup?q=Lakshmi+Precision
 ```
 
 ---
