@@ -948,8 +948,6 @@ Planned production enhancements:
 
 ---
 
-## Final Pitch
-
 TrustID is not just a UBID matcher.
 
 It is a privacy-preserving, explainable, human-reviewed, audit-defensible identity intelligence layer for Karnataka’s business ecosystem.
