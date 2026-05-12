@@ -977,5 +977,5 @@ TrustID creates that join key without modifying legacy systems, without exposing
 ## Author
 
 **Agrima Saxena**  
-Solo Participant — AI for Bharat Hackathon  
+Solo Participant - AI for Bharat Hackathon  
 Theme 1: Unified Business Identifier and Active Business Intelligence
